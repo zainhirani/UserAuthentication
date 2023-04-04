@@ -1,9 +1,11 @@
-import { createContext, useCallback, useContext } from "react";
+import { createContext, useCallback, useContext, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Box, CircularProgress } from "@mui/material";
 import { signOut as logout, signIn, useSession } from "next-auth/react";
 import { AUTH_LOGIN_URL } from "configs";
 import { getAuthenticationToken, setAuthenticationHeader } from "services";
+import { refreshToken } from "services/auth";
+import LocalStorage from "localforage";
 // import { FLEET_MANAGEMENT } from "constants/routes";
 // import OverlayLoader from "theme/Loader/OverlayLoader";
 
@@ -22,6 +24,15 @@ const AuthContext = createContext({} as AuthContextType);
 const AUTHENTICATION_PATH = [AUTH_LOGIN_URL];
 
 const AuthContextProvider: React.FC<AuthContextProps> = ({ children }) => {
+  useEffect(() => {
+    refreshToken({ refresh_token: LocalStorage.getItem("refresh_token") })
+      .then(() => {
+        router.push("/login");
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [LocalStorage.getItem("refresh_token")]);
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const router = useRouter();
@@ -33,6 +44,7 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({ children }) => {
 
   const prevToken = getAuthenticationToken();
   const currToken: any = session?.accessToken;
+  LocalStorage.setItem("refresh_token", currToken);
 
   if (currToken && prevToken !== `Bearer ${currToken}`) {
     setAuthenticationHeader(currToken);
@@ -52,15 +64,15 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({ children }) => {
       </Box>
     );
   }
-  // if (
-  //   !!process.browser &&
-  //   !(AUTHENTICATION_PATH || "").includes(window?.location?.pathname) &&
-  //   !session?.user &&
-  //   !loading
-  // ) {
-  //   router.replace(AUTHENTICATION_PATH[0]!);
-  //   return null;
-  // }
+  if (
+    !!process.browser &&
+    !(AUTHENTICATION_PATH || "").includes(window?.location?.pathname) &&
+    !session?.user &&
+    !loading
+  ) {
+    router.replace(AUTHENTICATION_PATH[0]!);
+    return null;
+  }
 
   if (
     !!process.browser &&

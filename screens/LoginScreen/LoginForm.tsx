@@ -1,6 +1,4 @@
-import React, { useCallback, useEffect } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
-
+import React, { useCallback } from "react";
 import {
   Box,
   Checkbox,
@@ -9,13 +7,10 @@ import {
   Link,
   TextField,
 } from "@mui/material";
-
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useSnackbar } from "notistack";
-
 import FormattedMessage, { useFormattedMessage } from "theme/FormattedMessage";
-
 import messages from "./messages";
 import { ButtonWrapper } from "./Styled";
 import { useAuthContext } from "contexts/AuthContext";
@@ -36,9 +31,7 @@ const LoginForm = () => {
       ...data,
       redirect: false,
     });
-    enqueueSnackbar(<FormattedMessage {...messages.successMessage} />, {
-      variant: "success",
-    });
+    console.log(resp, ".....resp");
   }, []);
 
   // use formik

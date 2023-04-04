@@ -7,6 +7,7 @@ import { BoxWrapper } from "./Styled";
 import { Button } from "@mui/material";
 import { useAuthContext } from "contexts/AuthContext";
 import { useRouter } from "next/router";
+import LocalStorage from "localforage";
 
 const HomeScreen: React.FC = () => {
   const { signOut } = useAuthContext();
@@ -21,6 +22,7 @@ const HomeScreen: React.FC = () => {
         <Button
           onClick={() => {
             signOut();
+            LocalStorage.clear();
             router.push("/login");
           }}
         >

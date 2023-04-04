@@ -48,3 +48,20 @@ export async function register({
     },
   });
 }
+
+// Rfresh Token
+export async function refreshToken({
+  refresh_token,
+}: {
+  refresh_token: string | any;
+}) {
+  console.log("inside refresh token");
+  return service({
+    method: "POST",
+    noAuth: true,
+    url: `/auth/refresh`,
+    body: {
+      refresh_token,
+    },
+  });
+}
