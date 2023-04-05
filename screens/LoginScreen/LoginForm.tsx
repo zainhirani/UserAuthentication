@@ -15,6 +15,7 @@ import messages from "./messages";
 import { ButtonWrapper } from "./Styled";
 import { useAuthContext } from "contexts/AuthContext";
 import { useRouter } from "next/router";
+import LocalStorage from "localforage";
 
 const validationSchema = Yup.object().shape({
   email: Yup.string().required().email().label("Email"),
@@ -30,8 +31,23 @@ const LoginForm = () => {
     const resp: any = await signIn("credentials", {
       ...data,
       redirect: false,
-    });
-    console.log(resp, ".....resp");
+    })
+      .then((userCredential: any) => {
+        const user = userCredential.user;
+        router.push("/");
+        enqueueSnackbar(<FormattedMessage {...messages.successMessage} />, {
+          variant: "success",
+        });
+        LocalStorage.setItem("refresh_token", user.accessToken);
+      })
+      .catch((error: any) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+        enqueueSnackbar(errorMessage, {
+          variant: "error",
+        });
+      });
   }, []);
 
   // use formik

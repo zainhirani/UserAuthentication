@@ -18,7 +18,7 @@ import { register } from "services/auth";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required().label("Name"),
-  number: Yup.string().required().label("Number"),
+  number: Yup.string().required().min(10).label("Number"),
   email: Yup.string().required().email().label("Email"),
   password: Yup.string().required().min(6).label("Password"),
   confirmPassword: Yup.string()

@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useEffect } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import { useRouter } from "next/router";
 import { Box, CircularProgress } from "@mui/material";
 import { signOut as logout, signIn, useSession } from "next-auth/react";
@@ -6,13 +12,11 @@ import { AUTH_LOGIN_URL } from "configs";
 import { getAuthenticationToken, setAuthenticationHeader } from "services";
 import { refreshToken } from "services/auth";
 import LocalStorage from "localforage";
-// import { FLEET_MANAGEMENT } from "constants/routes";
-// import OverlayLoader from "theme/Loader/OverlayLoader";
 
 interface AuthContextType {
   currentUser: any;
   signOut: () => void;
-  signIn: (...args: any) => void;
+  signIn: (...args: any) => any;
 }
 
 interface AuthContextProps {
@@ -22,24 +26,29 @@ interface AuthContextProps {
 const AuthContext = createContext({} as AuthContextType);
 
 const AUTHENTICATION_PATH = [AUTH_LOGIN_URL];
-
+const authToken = LocalStorage.getItem("refresh_token");
 const AuthContextProvider: React.FC<AuthContextProps> = ({ children }) => {
   useEffect(() => {
-    refreshToken({ refresh_token: LocalStorage.getItem("refresh_token") })
-      .then(() => {
-        router.push("/login");
+    refreshToken({ refresh_token: authToken })
+      .then((res) => {
+        if (res.refresh_token !== authToken) {
+          router.push("/login");
+          LocalStorage.clear();
+        }
       })
       .catch((err) => {
         console.log(err);
       });
-  }, [LocalStorage.getItem("refresh_token")]);
+  }, [authToken]);
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const router = useRouter();
+  const ref = useRef<string | null>(null);
 
   const signOut = useCallback(async () => {
     logout({ callbackUrl: "/" });
     router.replace(AUTHENTICATION_PATH[0]!);
+    LocalStorage.clear();
   }, [router]);
 
   const prevToken = getAuthenticationToken();
@@ -64,16 +73,13 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({ children }) => {
       </Box>
     );
   }
-  if (
-    !!process.browser &&
-    !(AUTHENTICATION_PATH || "").includes(window?.location?.pathname) &&
-    !session?.user &&
-    !loading
-  ) {
+  if (!session?.user && router.pathname == "/") {
     router.replace(AUTHENTICATION_PATH[0]!);
     return null;
   }
-
+  if (session?.user && ref.current == "/register") {
+    router.replace(AUTHENTICATION_PATH[0]!);
+  }
   if (
     !!process.browser &&
     (AUTHENTICATION_PATH || "").includes(window?.location?.pathname) &&
@@ -93,12 +99,12 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({ children }) => {
   return (
     <AuthContext.Provider
       value={{
+        currentUser: session?.user,
         signIn,
         signOut,
-        currentUser: session?.user,
       }}
     >
-      {children}
+      {loading ? null : children}
     </AuthContext.Provider>
   );
 };
